@@ -45,6 +45,13 @@ ADS1256 adc(CLKSPEED_MHZ, VREF, false);
 TLC59208 ledctrl;
 Cli cli;
 
+void read_adc(int argc, char *argv[])
+{
+    adc.waitDRDY(); 
+    float val = adc.readCurrentChannel();
+    Serial.println(val , 5);
+}
+
 void scan(int argc, char *argv[])
 {
     float readings[8] = {0};
@@ -113,15 +120,13 @@ void scan(int argc, char *argv[])
     
     Serial.println("\nclosing connection");
     client.stop();
-
+    
+    ////////////////////////////////////////
+    //     Transmission to google sheets
+    ////////////////////////////////////////
 }
 
-void read_adc(int argc, char *argv[])
-{
-    adc.waitDRDY(); 
-    float val = adc.readCurrentChannel();
-    Serial.println(val , 5);
-}
+
 
 void led(int argc, char *argv[])
 {
@@ -206,8 +211,5 @@ void setup()
 void loop()
 {
     cli.handle();
-    //delay(500);
-    //MarkusScanner();
-
 }
 
