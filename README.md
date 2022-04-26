@@ -1,8 +1,11 @@
 # PlasticScanner-TUD
 
 ## Pinout overview
+### Power
+The system runs on 5v from the ESP32 or Arduino Uno
+
 ### SPI
-| port      | ESP32   | PCB 2.1     | Description                   | 
+|           | ESP32   | PCB 2.1     | Description                   | 
 | --------- | ------- |  ---------- | ----------------------------- |
 | MOSI      | 23      | MOSI        | Master out, Slave in          | 
 | MISO      | 19      | MISO        | Master in, Slave out          | 
@@ -14,7 +17,7 @@
 
 
 ### I2C
-| port  | ESP32 | PCB 2.1    | Description                   | 
+|       | ESP32 | PCB 2.1    | Description                   | 
 | ----- | ----- | ---------- | ----------------------------- |
 | GND   | GND   | GND        | Ground                        | 
 | SDA   | 21    | SDA        | Serial Data connection        | 
