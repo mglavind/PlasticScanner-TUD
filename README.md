@@ -14,7 +14,9 @@
 
 
 ### I2C
-    GND     GND     GND         Ground
-    SDA     21      SDA         Serial Data connection
-    SCL     22      SCL         Serial clock
-    Reset   Nan     Reset       Reset
+| port  | ESP32 | PCB 2.1    | Description                   | 
+| ----- | ----- | ---------- | ----------------------------- |
+| GND   | GND   | GND        | Ground                        | 
+| SDA   | 21    | SDA        | Serial Data connection        | 
+| SCL   | 22    | SCL        | Serial clock                  | 
+| Reset | Nan   | Reset      | Reset                         | 
