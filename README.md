@@ -4,6 +4,8 @@
 ### Power
 The system runs on 5v from the ESP32 or Arduino Uno
 
+Hello from Jeppe!
+
 ### SPI
 |           | ESP32   | PCB 2.1     | Description                   | 
 | --------- | ------- |  ---------- | ----------------------------- |
