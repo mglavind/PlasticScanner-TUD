@@ -12,23 +12,18 @@
 #include <SPI.h>
 #include <Wire.h>
 
-
-
 /*
     /////////////////////////////////////////////////
             Setup to Google sheets start
     /////////////////////////////////////////////////
 */
 
-// Replace with your SSID and Password
+// WiFi SSID and Password
 const char* ssid     = "TSH Guest";
 const char* password = "";
 
-// Replace with your unique IFTTT URL resource
+// IFTTT URL resource
 const char* resource = "/trigger/PlasticScanned/with/key/bl96IM25tg14213NBlSzwH";
-
-// How your resource variable should look like, but with your own API KEY (that API KEY below is just an example):
-//const char* resource = "/trigger/bme280_readings/with/key/nAZjOphL3d-ZO4N3k64-1A7gTlNSrxMJdmqy3";
 
 // Maker Webhooks IFTTT
 const char* server = "maker.ifttt.com";
@@ -48,24 +43,29 @@ Cli cli;
 void read_adc(int argc, char *argv[])
 {
     adc.waitDRDY(); 
-    float val = adc.readCurrentChannel();
+    float val = adc.readCurrentChannel(); 
     Serial.println(val , 5);
 }
 
 void scan(int argc, char *argv[])
 {
+    float preScan = adc.readCurrentChannel();   // making a scan without LED's
+
     float readings[8] = {0};
-    for (int i=0; i<8; i++) {
-        ledctrl.on(i);
-        delay(5);
-        adc.waitDRDY(); 
-        readings[i] = adc.readCurrentChannel();
-        ledctrl.off(i);
+    for (int i=0; i<8; i++) {                   // taking 8 scan values
+        ledctrl.on(i);                          // turning LED "i" on
+        delay(5);                               // wait for it to be stable
+        adc.waitDRDY();                         // Check if sensor is ready 
+        readings[i] = adc.readCurrentChannel(); // Read sensor and save in place "i"
+        ledctrl.off(i);                         // turn off LED "i"
     }
 
-    for (int i=0; i<8; i++) {
-        Serial.print(readings[i], 5);
-        Serial.print('\t');
+
+    float postScan = adc.readCurrentChannel();  // making a scan without LED's
+    
+    for (int i=0; i<8; i++) {       
+        Serial.print(readings[i], 5);           // this function just prints all the readings
+        Serial.print('\t');                     // adds space (tap) between all values
     }
     Serial.println();
 
@@ -93,7 +93,9 @@ void scan(int argc, char *argv[])
             String(readings[4]*multiplier) + ";" +
             String(readings[5]*multiplier) + ";" +
             String(readings[6]*multiplier) + ";" +
-            String(readings[7]*multiplier) 
+            String(readings[7]*multiplier) + ";" +
+            String(preScan*multiplier)     + ";" +
+            String(postScan*multiplier)
             ; 
 
     // string as Json object
