@@ -12,6 +12,8 @@
 #include <SPI.h>
 #include <Wire.h>
 
+
+
 /*
     /////////////////////////////////////////////////
             Setup to Google sheets start
@@ -30,7 +32,30 @@ const char* server = "maker.ifttt.com";
 
 /*
     /////////////////////////////////////////////////
-            Setup to Google sheets end
+            Add LCD output
+    /////////////////////////////////////////////////
+
+    * ESP32 various dev board     : CS:  5, DC: 27, RST: 33, BL: 22
+*/
+#include <Arduino_GFX_Library.h>
+
+#define GFX_BL DF_GFX_BL // default backlight pin, you may replace DF_GFX_BL to actual backlight pin
+
+/* More dev device declaration: https://github.com/moononournation/Arduino_GFX/wiki/Dev-Device-Declaration */
+#if defined(DISPLAY_DEV_KIT)
+Arduino_GFX *gfx = create_default_Arduino_GFX();
+#endif /* !defined(DISPLAY_DEV_KIT) */
+
+/* More data bus class: https://github.com/moononournation/Arduino_GFX/wiki/Data-Bus-Class */
+Arduino_DataBus *bus = new Arduino_ESP32SPI(27 /* DC */, 5 /* CS */, 18 /* SCK */, 23 /* MOSI */, -1 /* MISO */, VSPI /* spi_num */);
+
+/* More display class: https://github.com/moononournation/Arduino_GFX/wiki/Display-Class */
+Arduino_GFX *gfx = new Arduino_GC9A01(bus, 7 /* RST */, 0 /* rotation */, true /* IPS */);
+
+
+/*
+    /////////////////////////////////////////////////
+            From Plastic Scanner
     /////////////////////////////////////////////////
 */
 static const int CLKSPEED_MHZ = 8;
