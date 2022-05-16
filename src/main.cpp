@@ -13,7 +13,6 @@
 #include <Wire.h>
 
 
-
 /*
     /////////////////////////////////////////////////
             Setup to Google sheets start
@@ -65,6 +64,8 @@ static const float VREF = 2.5;
 ADS1256 adc(CLKSPEED_MHZ, VREF, false);
 TLC59208 ledctrl;
 Cli cli;
+
+
 
 void read_adc(int argc, char *argv[])
 {
@@ -254,10 +255,9 @@ void setup()
     Serial.println("PlasticScanner is initialized!");
 }
 
-
-
 void loop()
 {
     cli.handle();
+    Serial.println("PlasticScanner is initialized!");
 }
 
