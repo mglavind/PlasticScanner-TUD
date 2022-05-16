@@ -21,8 +21,8 @@
 */
 
 // WiFi SSID and Password
-const char* ssid     = "TSH Guest";
-const char* password = "";
+const char* ssid     = "Markus' iPhone";
+const char* password = "eeeeeeee";
 
 // IFTTT URL resource
 const char* resource = "/trigger/PlasticScanned/with/key/bl96IM25tg14213NBlSzwH";
@@ -52,6 +52,7 @@ Arduino_DataBus *bus = new Arduino_ESP32SPI(27 /* DC */, 5 /* CS */, 18 /* SCK *
 /* More display class: https://github.com/moononournation/Arduino_GFX/wiki/Display-Class */
 Arduino_GFX *gfx = new Arduino_GC9A01(bus, 7 /* RST */, 0 /* rotation */, true /* IPS */);
 
+#include "FreeSansBold48pt7b.h"
 
 /*
     /////////////////////////////////////////////////
@@ -147,6 +148,14 @@ void scan(int argc, char *argv[])
     
     Serial.println("\nclosing connection");
     client.stop();
+
+    gfx->fillScreen(BLACK);
+    gfx->setCursor(50, 170);
+    gfx->setFont(&FreeSansBold48pt7b);
+    gfx->setTextColor(WHITE);
+    gfx->println("Scan");
+
+
     
     ////////////////////////////////////////
     //     Transmission to google sheets
@@ -223,6 +232,18 @@ void setup()
     adc.setChannel(0,1);    // differential ADC reading 
 
     initWifi();
+
+    gfx->begin();
+    gfx->fillScreen(BLACK);
+    #ifdef GFX_BL
+        pinMode(GFX_BL, OUTPUT);
+        digitalWrite(GFX_BL, HIGH);
+    #endif
+    gfx->fillScreen(BLACK);
+    gfx->setCursor(50, 170);
+    gfx->setFont(&FreeSansBold48pt7b);
+    gfx->setTextColor(WHITE);
+    gfx->println("Ready");
 
     cli.add_command({"scan", scan, "Perform a scan sequence: for each led measure adc value"});
     cli.add_command({"adc", read_adc, "Reads ADC measurement"});

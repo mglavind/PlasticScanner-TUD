@@ -61,7 +61,7 @@ void TLC59208::begin()
     Wire.write(0x00);   // 11h: ALLCALLADR
     bool ret = Wire.endTransmission();
     
-    assert(ret == 0);   // Fail if data not ACKed
+    // assert(ret == 0);   // Fail if data not ACKed. Comment out of not connected to LEDs
 }
 
 
