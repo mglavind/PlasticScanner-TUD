@@ -5,7 +5,7 @@
 */
 #include "assert.h"
 #include "cli.h"
-#include "ADS1256.h"
+#include <ADS1256.h>
 #include <tlc59208.h>
 #include <Arduino.h>
 #include <WiFi.h>
@@ -19,8 +19,8 @@
 */
 
 // WiFi SSID and Password
-const char* ssid     = "TSH Guest";
-const char* password = "";
+const char* ssid     = "Markus´ iPhone";
+const char* password = "eeeeeeee";
 
 // IFTTT URL resource
 const char* resource = "/trigger/PlasticScanned/with/key/bl96IM25tg14213NBlSzwH";
@@ -33,20 +33,26 @@ const char* server = "maker.ifttt.com";
             Setup to Google sheets end
     /////////////////////////////////////////////////
 */
-static const int CLKSPEED_MHZ = 8;
-static const float VREF = 2.5;
 
-ADS1256 adc(CLKSPEED_MHZ, VREF, false);
+
+float clockMHZ = 8; // crystal frequency used on ADS1256
+float vRef = 2.5; // voltage reference
+ADS1256 adc(clockMHZ,vRef,false); // RESETPIN is permanently tied to 3.3v
+//ADS1256 adc(CLKSPEED_MHZ, VREF, false); // this line is cilling the script
 TLC59208 ledctrl;
 Cli cli;
 
+
+/*
 void read_adc(int argc, char *argv[])
 {
     adc.waitDRDY(); 
     float val = adc.readCurrentChannel(); 
     Serial.println(val , 5);
 }
+*/
 
+/*
 void scan(int argc, char *argv[])
 {
     float preScan = adc.readCurrentChannel();   // making a scan without LED's
@@ -127,7 +133,7 @@ void scan(int argc, char *argv[])
     //     Transmission to google sheets
     ////////////////////////////////////////
 }
-
+*/
 
 
 void led(int argc, char *argv[])
@@ -155,10 +161,12 @@ void led(int argc, char *argv[])
 }
 
 
+
 void help(int argc, char *argv[])
 {
     cli.list_commands();
 }
+
 
 // Establish a Wi-Fi connection with your router
 void initWifi() {
@@ -183,8 +191,10 @@ void initWifi() {
   Serial.println(WiFi.localIP());
 }
 
+
 void setup()
 {
+
     Serial.begin(9600);
     Serial.println("Serial Up");
     SPI.begin();
@@ -193,14 +203,14 @@ void setup()
     Serial.println("Wire Up");
     ledctrl.begin();
     Serial.println("LED Up");
-    adc.begin(ADS1256_DRATE_30000SPS,ADS1256_GAIN_1,false); 
+    //adc.begin(ADS1256_DRATE_30000SPS,ADS1256_GAIN_1,false); 
     Serial.println("ADC Up");
-    adc.setChannel(0,1);    // differential ADC reading 
+    //adc.setChannel(0,1);    // differential ADC reading 
 
     initWifi();
 
-    cli.add_command({"scan", scan, "Perform a scan sequence: for each led measure adc value"});
-    cli.add_command({"adc", read_adc, "Reads ADC measurement"});
+    //cli.add_command({"scan", scan, "Perform a scan sequence: for each led measure adc value"});
+    //cli.add_command({"adc", read_adc, "Reads ADC measurement"});
     cli.add_command({"led", led, "Turns an LED <number> on/off <state>.\n\t\t\t\tUsage: led <number> <state>"});
     cli.add_command({"help", help, "Lists all available commands"});
     cli.begin();
