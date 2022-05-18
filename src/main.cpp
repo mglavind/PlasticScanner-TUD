@@ -19,8 +19,8 @@
 */
 
 // WiFi SSID and Password
-const char* ssid     = "Markus´ iPhone";
-const char* password = "eeeeeeee";
+const char* ssid     = "Biosphere";
+const char* password = "pl4stic-sc4nner";
 
 // IFTTT URL resource
 const char* resource = "/trigger/PlasticScanned/with/key/bl96IM25tg14213NBlSzwH";
@@ -43,16 +43,16 @@ TLC59208 ledctrl;
 Cli cli;
 
 
-/*
+
 void read_adc(int argc, char *argv[])
 {
     adc.waitDRDY(); 
     float val = adc.readCurrentChannel(); 
     Serial.println(val , 5);
 }
-*/
 
-/*
+
+
 void scan(int argc, char *argv[])
 {
     float preScan = adc.readCurrentChannel();   // making a scan without LED's
@@ -133,7 +133,7 @@ void scan(int argc, char *argv[])
     //     Transmission to google sheets
     ////////////////////////////////////////
 }
-*/
+
 
 
 void led(int argc, char *argv[])
@@ -198,19 +198,22 @@ void setup()
     Serial.begin(9600);
     Serial.println("Serial Up");
     SPI.begin();
+    SPI.beginTransaction(
+        SPISettings(clockMHZ * 1000000 / 4, MSBFIRST, SPI_MODE1));
+
     Serial.println("SPI Up");
     Wire.begin();
     Serial.println("Wire Up");
     ledctrl.begin();
     Serial.println("LED Up");
-    //adc.begin(ADS1256_DRATE_30000SPS,ADS1256_GAIN_1,false); 
+    adc.begin(ADS1256_DRATE_30000SPS,ADS1256_GAIN_1,false); 
     Serial.println("ADC Up");
-    //adc.setChannel(0,1);    // differential ADC reading 
+    adc.setChannel(0,1);    // differential ADC reading 
 
     initWifi();
 
-    //cli.add_command({"scan", scan, "Perform a scan sequence: for each led measure adc value"});
-    //cli.add_command({"adc", read_adc, "Reads ADC measurement"});
+    cli.add_command({"scan", scan, "Perform a scan sequence: for each led measure adc value"});
+    cli.add_command({"adc", read_adc, "Reads ADC measurement"});
     cli.add_command({"led", led, "Turns an LED <number> on/off <state>.\n\t\t\t\tUsage: led <number> <state>"});
     cli.add_command({"help", help, "Lists all available commands"});
     cli.begin();
