@@ -3,6 +3,7 @@
     Run with: 
         pio run --target upload && pio device monitor
 */
+#include "model-v1.h"
 #include "assert.h"
 #include <ADS1256.h>
 #include <tlc59208.h>
@@ -12,12 +13,21 @@
 #include <Wire.h>
 #include <WiFiMulti.h>
 
+
+/* /////////////////////////////////////////////////
+            Wifi setup
+*//////////////////////////////////////////////////
 WiFiMulti wifiMulti;
 
 const int buttonPin = 33;
 int buttonState = 0;
 
-// Deep sleep
+
+
+/* /////////////////////////////////////////////////
+            Deep sleep & timekeeping
+*//////////////////////////////////////////////////
+
 #define BUTTON_PIN_BITMASK 0x200000000 // 2^33 in hex
 RTC_DATA_ATTR int bootCount = 0;
 unsigned long LastUseMillis = 0;
@@ -29,11 +39,20 @@ unsigned long previousMillis = 0;
 unsigned long interval = 30000;
 
 
-/*
-    /////////////////////////////////////////////////
+
+
+/* /////////////////////////////////////////////////
+            Machine Learning
+*//////////////////////////////////////////////////
+
+// Creating a machine learning based classifier
+Eloquent::ML::Port::XGBClassifier classifier;
+
+
+
+/* /////////////////////////////////////////////////
             Setup to Google sheets start
-    /////////////////////////////////////////////////
-*/
+*//////////////////////////////////////////////////
 
 // IFTTT URL resource
 const char* resource = "/trigger/PlasticScanned/with/key/bl96IM25tg14213NBlSzwH";
@@ -41,12 +60,11 @@ const char* resource = "/trigger/PlasticScanned/with/key/bl96IM25tg14213NBlSzwH"
 // Maker Webhooks IFTTT
 const char* server = "maker.ifttt.com";
 
-/*
-    /////////////////////////////////////////////////
-            Setup to Google sheets end
-    /////////////////////////////////////////////////
-*/
 
+
+/* /////////////////////////////////////////////////
+            ADC & LED control
+*//////////////////////////////////////////////////
 
 float clockMHZ = 8; // crystal frequency used on ADS1256
 float vRef = 2.5; // voltage reference
@@ -57,7 +75,7 @@ TLC59208 ledctrl;
 
 
 
-void read_adc(int argc, char *argv[])
+void read_adc(int argc, char *argv[])  // Takes a single sensor reading
 {
     adc.waitDRDY(); 
     float val = adc.readCurrentChannel(); 
@@ -66,7 +84,14 @@ void read_adc(int argc, char *argv[])
 
 
 
-void sendData(String data){
+void classify(float data[]) {
+    Serial.print("Predicted class: ");
+    Serial.println(classifier.predict(data));
+}
+
+
+
+void sendData(String data){  // Sends data to google sheets
     Serial.print("Connecting to "); 
     Serial.print(server);
     
@@ -110,7 +135,7 @@ void sendData(String data){
     }
 }
 
-void scan()
+void scan(float ClassifiedResult) // Performs a scanning
 {
     // Place "scanning" screen here
     float preScan = adc.readCurrentChannel();   // making a scan without LED's
@@ -155,10 +180,17 @@ void scan()
 
     // sends data
     sendData(jsonObject);
+    float readingsForML[8] = {0};
+    for (int i=0; i<8; i++) {                   // taking 8 scan values
+        readingsForM[i] = readings[i] * multiplier;
+
+    }
+    
+    classify(readingsForML);
 }
 
 
-void led(int argc, char *argv[])
+void led(int argc, char *argv[]) // controlls the LED's
 {
     int num;        // Parameter 1: led number [0..7]
     bool state;     // Parameter 2: led state [on/off]
@@ -183,8 +215,8 @@ void led(int argc, char *argv[])
 }
 
 
-// Establish a Wi-Fi connection with your router
-void initWifi() {
+
+void initWifi() { // Establish a Wi-Fi connection with your router
     wifiMulti.addAP("Markus iPhone", "KomNuMand");
     wifiMulti.addAP("Biosphere", "pl4stic-sc4nner");
     wifiMulti.addAP("TSH Guest", "");
@@ -250,7 +282,8 @@ void loop()
         initWifi();
         previousMillis = currentMillis;
     }
-    if (currentMillis - LastUseMillis >= SleepTimer)
+    
+    if (currentMillis - LastUseMillis >= SleepTimer) // If no button press for some time -> sleep
     {
         Serial.println("Going to sleep...");
         // Place "Going to sleep screen" + delay here
