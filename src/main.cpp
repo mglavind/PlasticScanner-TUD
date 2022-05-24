@@ -12,11 +12,18 @@
 #include <SPI.h>
 #include <Wire.h>
 
+
+const int buttonPin = 33;
+int buttonState = 0;
+
+
 /*
     /////////////////////////////////////////////////
             Setup to Google sheets start
     /////////////////////////////////////////////////
 */
+
+
 
 // WiFi SSID and Password
 //const char* ssid     = "Biosphere";
@@ -56,8 +63,90 @@ void read_adc(int argc, char *argv[])
 }
 
 
-
+/*
 void scan(int argc, char *argv[])
+{
+    float preScan = adc.readCurrentChannel();   // making a scan without LED's
+
+    float readings[8] = {0};
+    for (int i=0; i<8; i++) {                   // taking 8 scan values
+        ledctrl.on(i);                          // turning LED "i" on
+        delay(5);                               // wait for it to be stable
+        adc.waitDRDY();                         // Check if sensor is ready 
+        readings[i] = adc.readCurrentChannel(); // Read sensor and save in place "i"
+        ledctrl.off(i);                         // turn off LED "i"
+    }
+
+
+    float postScan = adc.readCurrentChannel();  // making a scan without LED's
+    
+    for (int i=0; i<8; i++) {       
+        Serial.print(readings[i], 5);           // this function just prints all the readings
+        Serial.print('\t');                     // adds space (tap) between all values
+    }
+    Serial.println();
+
+    ////////////////////////////////////////
+    //     Transmission to google sheets
+    ////////////////////////////////////////
+    Serial.print("Connecting to "); 
+    Serial.print(server);
+    
+    WiFiClient client;
+    int retries = 5;
+    while(!!!client.connect(server, 80) && (retries-- > 0)) {
+        Serial.print(".");
+    }
+    Serial.println();
+    if(!!!client.connected()) {
+        Serial.println("Failed to connect...");
+    }
+    // All readings to one string
+    int multiplier = 10000000 ;
+    String ResultsString = String(readings[0]*multiplier) + ";" + 
+            String(readings[1]*multiplier) + ";" + 
+            String(readings[2]*multiplier) + ";" +
+            String(readings[3]*multiplier) + ";" +
+            String(readings[4]*multiplier) + ";" +
+            String(readings[5]*multiplier) + ";" +
+            String(readings[6]*multiplier) + ";" +
+            String(readings[7]*multiplier) + ";" +
+            String(preScan*multiplier)     + ";" +
+            String(postScan*multiplier)
+            ; 
+
+    // string as Json object
+    String jsonObject = String("{\"value1\":\"") + (ResultsString) +  "\"}";
+
+    client.println(String("POST ") + resource + " HTTP/1.1");
+    client.println(String("Host: ") + server); 
+    client.println("Connection: close\r\nContent-Type: application/json");
+    client.print("Content-Length: ");
+    client.println(jsonObject.length());
+    client.println();
+    client.println(jsonObject);
+            
+    int timeout = 5 * 10; // 5 seconds             
+    while(!!!client.available() && (timeout-- > 0)){
+        delay(100);
+    }
+    if(!!!client.available()) {
+        Serial.println("No response...");
+    }
+    while(client.available()){
+        Serial.write(client.read());
+    }
+    
+    Serial.println("\nclosing connection");
+    client.stop();
+    
+    SerialClient();
+    ////////////////////////////////////////
+    //     Transmission to google sheets
+    ////////////////////////////////////////
+}
+*/
+void scan()
 {
     float preScan = adc.readCurrentChannel();   // making a scan without LED's
 
@@ -140,7 +229,6 @@ void scan(int argc, char *argv[])
 }
 
 
-
 void led(int argc, char *argv[])
 {
     int num;        // Parameter 1: led number [0..7]
@@ -216,13 +304,15 @@ void setup()
     adc.setChannel(0,1);    // differential ADC reading 
 
     initWifi();
-
+    /*
     cli.add_command({"scan", scan, "Perform a scan sequence: for each led measure adc value"});
     cli.add_command({"adc", read_adc, "Reads ADC measurement"});
     cli.add_command({"led", led, "Turns an LED <number> on/off <state>.\n\t\t\t\tUsage: led <number> <state>"});
     cli.add_command({"help", help, "Lists all available commands"});
     cli.begin();
-
+    */
+    pinMode(buttonPin, INPUT);
+    Serial.println("Trigger Up");
     Serial.println("PlasticScanner is initialized!");
 }
 
@@ -231,6 +321,16 @@ void setup()
 
 void loop()
 {
-    cli.handle();
+    //cli.handle();
+
+    buttonState = digitalRead(buttonPin);
+    if (buttonState == LOW) {
+        scan();
+    } 
+    else{
+        
+    }
+
+
 }
 
