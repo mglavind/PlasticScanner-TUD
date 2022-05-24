@@ -19,8 +19,10 @@
 */
 
 // WiFi SSID and Password
-const char* ssid     = "Biosphere";
-const char* password = "pl4stic-sc4nner";
+//const char* ssid     = "Biosphere";
+//const char* password = "pl4stic-sc4nner";
+const char* ssid     = "Markus iPhone";
+const char* password = "KomNuMand";
 
 // IFTTT URL resource
 const char* resource = "/trigger/PlasticScanned/with/key/bl96IM25tg14213NBlSzwH";
@@ -42,7 +44,9 @@ ADS1256 adc(clockMHZ,vRef,false); // RESETPIN is permanently tied to 3.3v
 TLC59208 ledctrl;
 Cli cli;
 
-
+void SerialClient() {
+    cli.handle();
+}
 
 void read_adc(int argc, char *argv[])
 {
@@ -129,6 +133,7 @@ void scan(int argc, char *argv[])
     Serial.println("\nclosing connection");
     client.stop();
     
+    SerialClient();
     ////////////////////////////////////////
     //     Transmission to google sheets
     ////////////////////////////////////////
@@ -220,6 +225,7 @@ void setup()
 
     Serial.println("PlasticScanner is initialized!");
 }
+
 
 
 

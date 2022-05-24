@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-static const int RESET = 2;
+static const int RESET = 32;
 static const int ADDR  = 0x20;
 static const int N_OUTPUTS = 8;
 
