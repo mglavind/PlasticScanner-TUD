@@ -3,7 +3,7 @@
     Run with: 
         pio run --target upload && pio device monitor
 */
-#include "model-v1.h"
+
 #include "assert.h"
 #include <ADS1256.h>
 #include <tlc59208.h>
@@ -12,6 +12,7 @@
 #include <SPI.h>
 #include <Wire.h>
 #include <WiFiMulti.h>
+#include "model-v1.h" // must come after <arduino.h>
 
 
 /* /////////////////////////////////////////////////
@@ -21,6 +22,7 @@ WiFiMulti wifiMulti;
 
 const int buttonPin = 33;
 int buttonState = 0;
+float IdentifiedPlasticType = 0;
 
 
 
@@ -69,7 +71,6 @@ const char* server = "maker.ifttt.com";
 float clockMHZ = 8; // crystal frequency used on ADS1256
 float vRef = 2.5; // voltage reference
 ADS1256 adc(clockMHZ,vRef,false); // RESETPIN is permanently tied to 3.3v
-//ADS1256 adc(CLKSPEED_MHZ, VREF, false); // this line is cilling the script
 TLC59208 ledctrl;
 
 
@@ -81,14 +82,6 @@ void read_adc(int argc, char *argv[])  // Takes a single sensor reading
     float val = adc.readCurrentChannel(); 
     Serial.println(val , 5);
 }
-
-
-
-void classify(float data[]) {
-    Serial.print("Predicted class: ");
-    Serial.println(classifier.predict(data));
-}
-
 
 
 void sendData(String data){  // Sends data to google sheets
@@ -135,7 +128,7 @@ void sendData(String data){  // Sends data to google sheets
     }
 }
 
-void scan(float ClassifiedResult) // Performs a scanning
+void scan() // Performs a scanning
 {
     // Place "scanning" screen here
     float preScan = adc.readCurrentChannel();   // making a scan without LED's
@@ -177,17 +170,16 @@ void scan(float ClassifiedResult) // Performs a scanning
 
     // string as Json object
     String jsonObject = String("{\"value1\":\"") + (ResultsString) +  "\"}";
-
-    // sends data
     sendData(jsonObject);
-    float readingsForML[8] = {0};
-    for (int i=0; i<8; i++) {                   // taking 8 scan values
-        readingsForM[i] = readings[i] * multiplier;
 
-    }
-    
-    classify(readingsForML);
+    Serial.print("Predicted class: ");
+    IdentifiedPlasticType = classifier.predict(readings);
+    Serial.println(IdentifiedPlasticType);
 }
+
+
+    
+
 
 
 void led(int argc, char *argv[]) // controlls the LED's
