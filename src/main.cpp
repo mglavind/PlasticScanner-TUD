@@ -12,6 +12,10 @@
 #include <SPI.h>
 #include <Wire.h>
 #include <WiFiMulti.h>
+#include <TFT_eSPI.h> 
+
+
+
 #include "model-v1.h" // must come after <arduino.h>
 
 
@@ -130,19 +134,21 @@ void sendData(String data){  // Sends data to google sheets
 
 void scan() // Performs a scanning
 {
+    int multiplier = 10000000 ; 
     // Place "scanning" screen here
-    float preScan = adc.readCurrentChannel();   // making a scan without LED's
+    float preScan = adc.readCurrentChannel()*multiplier;   // making a scan without LED's
     float readings[8] = {0};
-    for (int i=0; i<8; i++) {                   // taking 8 scan values
+    for (int i=0; i<8; i++) {   
+                       // taking 8 scan values
         ledctrl.on(i);                          // turning LED "i" on
         delay(5);                               // wait for it to be stable
         adc.waitDRDY();                         // Check if sensor is ready 
-        readings[i] = adc.readCurrentChannel(); // Read sensor and save in place "i"
+        readings[i] = adc.readCurrentChannel()*multiplier; // Read sensor and save in place "i"
         ledctrl.off(i);                         // turn off LED "i"
     }
 
 
-    float postScan = adc.readCurrentChannel();  // making a scan without LED's
+    float postScan = adc.readCurrentChannel()*multiplier;  // making a scan without LED's
     
     for (int i=0; i<8; i++) {       
         Serial.print(readings[i], 5);           // this function just prints all the readings
@@ -155,17 +161,17 @@ void scan() // Performs a scanning
     ////////////////////////////////////////
 
     // All readings to one string
-    int multiplier = 10000000 ;
-    String ResultsString = String(readings[0]*multiplier) + ";" + 
-            String(readings[1]*multiplier) + ";" + 
-            String(readings[2]*multiplier) + ";" +
-            String(readings[3]*multiplier) + ";" +
-            String(readings[4]*multiplier) + ";" +
-            String(readings[5]*multiplier) + ";" +
-            String(readings[6]*multiplier) + ";" +
-            String(readings[7]*multiplier) + ";" +
-            String(preScan*multiplier)     + ";" +
-            String(postScan*multiplier)
+    
+    String ResultsString = String(readings[0]) + ";" + 
+            String(readings[1]) + ";" + 
+            String(readings[2]) + ";" +
+            String(readings[3]) + ";" +
+            String(readings[4]) + ";" +
+            String(readings[5]) + ";" +
+            String(readings[6]) + ";" +
+            String(readings[7]) + ";" +
+            String(preScan)     + ";" +
+            String(postScan)
             ; 
 
     // string as Json object
@@ -212,6 +218,7 @@ void initWifi() { // Establish a Wi-Fi connection with your router
     wifiMulti.addAP("Markus iPhone", "KomNuMand");
     wifiMulti.addAP("Biosphere", "pl4stic-sc4nner");
     wifiMulti.addAP("TSH Guest", "");
+    wifiMulti.addAP("HW45", "defg030ab1");
 
     Serial.println("Connecting Wifi...");
     if(wifiMulti.run() == WL_CONNECTED) {
