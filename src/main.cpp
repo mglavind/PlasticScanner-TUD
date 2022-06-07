@@ -28,7 +28,7 @@ const int buttonPin = 33;
 int buttonState = 0;
 float IdentifiedPlasticType = 0;
 
-
+uint8_t ADCstatus = 0;
 
 /* /////////////////////////////////////////////////
             Deep sleep & timekeeping
@@ -134,20 +134,26 @@ void sendData(String data){  // Sends data to google sheets
 
 void scan() // Performs a scanning
 {
+    
     int multiplier = 10000000 ; 
     // Place "scanning" screen here
+    adc.waitDRDY();  
     float preScan = adc.readCurrentChannel()*multiplier;   // making a scan without LED's
     float readings[8] = {0};
     for (int i=0; i<8; i++) {   
                        // taking 8 scan values
         ledctrl.on(i);                          // turning LED "i" on
-        delay(5);                               // wait for it to be stable
+        Serial.println("LED on ");
+        Serial.print(i);
+        delay(15);                               // wait for it to be stable
         adc.waitDRDY();                         // Check if sensor is ready 
-        readings[i] = adc.readCurrentChannel()*multiplier; // Read sensor and save in place "i"
+        readings[i] = adc.readCurrentChannel(); // Read sensor and save in place "i"
         ledctrl.off(i);                         // turn off LED "i"
+        Serial.println("Reading ");
+        Serial.print(readings[i]);
     }
 
-
+    adc.waitDRDY();  
     float postScan = adc.readCurrentChannel()*multiplier;  // making a scan without LED's
     
     for (int i=0; i<8; i++) {       
@@ -182,10 +188,6 @@ void scan() // Performs a scanning
     IdentifiedPlasticType = classifier.predict(readings);
     Serial.println(IdentifiedPlasticType);
 }
-
-
-    
-
 
 
 void led(int argc, char *argv[]) // controlls the LED's
@@ -239,16 +241,31 @@ void setup()
     Serial.println("Serial Up");
     SPI.begin();
     SPI.beginTransaction(
-        SPISettings(clockMHZ * 1000000 / 4, MSBFIRST, SPI_MODE1));
+       SPISettings(clockMHZ * 20000000 / 4, MSBFIRST, SPI_MODE1));
     Serial.println("SPI Up");
     // Place Booting screen here
     Wire.begin();
     Serial.println("Wire Up");
     ledctrl.begin();
     Serial.println("LED Up");
+    //adc.setChannel(0,1);
     adc.begin(ADS1256_DRATE_30000SPS,ADS1256_GAIN_1,false); 
+    
     Serial.println("ADC Up");
     adc.setChannel(0,1);    // differential ADC reading 
+
+    while (ADCstatus == 0)
+    {
+        ADCstatus = adc.getStatus();
+        Serial.println(ADCstatus,BIN);
+        delay(50);
+    }
+    
+    ADCstatus = adc.getStatus();
+    Serial.println(ADCstatus,BIN);
+
+
+
     initWifi();
 
     pinMode(buttonPin, INPUT);
