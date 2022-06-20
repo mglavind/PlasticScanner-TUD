@@ -13,21 +13,12 @@
 | Reset     | 27      | Reset       | Reset                         | 
 | DRDY      | 26      | DRDY        | Data Ready                    | 
 */
-
-
-//#include "assert.h"
-//#include <ADS1256.h>
-//#include <tlc59208.h>
 #include <Arduino.h>
-#include <WiFi.h>
 #include <SPI.h>
 #include <Wire.h>
-#include <WiFiMulti.h>
 #include <TFT_eSPI.h> 
 #include <String.h>
 #include "Logo5.h"
-
-#include "model-v1.h" // must come after <arduino.h>
 
 
 /* /////////////////////////////////////////////////
@@ -73,8 +64,6 @@ int xmin = centerX-(spriteWidth/2)+1;
 /* /////////////////////////////////////////////////
             Wifi setup
 *//////////////////////////////////////////////////
-WiFiMulti wifiMulti;
-
 const int buttonPowerPin = 32;
 const int buttonPin = 33;
 int buttonState = 0;
@@ -105,37 +94,6 @@ unsigned long BootingInterval = 3000;
 
 
 
-
-
-/* /////////////////////////////////////////////////
-            Machine Learning
-*//////////////////////////////////////////////////
-
-// Creating a machine learning based classifier
-Eloquent::ML::Port::XGBClassifier classifier;
-
-
-
-/* /////////////////////////////////////////////////
-            Setup to Google sheets start
-*//////////////////////////////////////////////////
-
-// IFTTT URL resource
-const char* resource = "/trigger/PlasticScanned/with/key/bl96IM25tg14213NBlSzwH";
-
-// Maker Webhooks IFTTT
-const char* server = "maker.ifttt.com";
-
-
-
-/* /////////////////////////////////////////////////
-            ADC & LED control
-*//////////////////////////////////////////////////
-
-float clockMHZ = 8; // crystal frequency used on ADS1256
-float vRef = 2.5; // voltage reference
-//ADS1256 adc(clockMHZ,vRef,false); // RESETPIN is permanently tied to 3.3v
-//TLC59208 ledctrl;
 
 /* /////////////////////////////////////////////////
             Screens
@@ -289,47 +247,6 @@ void read_adc(int argc, char *argv[])  // Takes a single sensor reading
 
 void sendData(String data){  // Sends data to google sheets
     Serial.println("Send data initiated");
-    Serial.print("Connecting to "); 
-    Serial.print(server);
-    
-    WiFiClient client;
-    int retries = 5;
-    while(!!!client.connect(server, 80) && (retries-- > 0)) {
-        Serial.print(".");
-    }
-    Serial.println();
-    
-    if(!!!client.connected()) {
-        Serial.println("Failed to connect...");
-    }
-
-    if(wifiMulti.run() == WL_CONNECTED) {    
-        client.println(String("POST ") + resource + " HTTP/1.1");
-        client.println(String("Host: ") + server); 
-        client.println("Connection: close\r\nContent-Type: application/json");
-        client.print("Content-Length: ");
-        client.println(data.length());
-        client.println();
-        client.println(data);
-                
-        int timeout = 5 * 10; // 5 seconds             
-        while(!!!client.available() && (timeout-- > 0)){
-            delay(100);
-        }
-        if(!!!client.available()) {
-            Serial.println("No response...");
-        }
-        while(client.available()){
-            Serial.write(client.read());
-        }
-        Serial.println("\nclosing connection");
-        client.stop();
-    }
-    else{
-        Serial.println("Not Connected to WiFi");
-        Serial.println("Would have sent the following data:");
-        Serial.println(data);
-    }
     Serial.println("Send data done");
 }
 
@@ -385,7 +302,7 @@ void scan() // Performs a scanning
     // sendData(jsonObject);
 
     Serial.print("Predicted class: ");
-    IdentifiedPlasticType = classifier.predict(readings);
+    IdentifiedPlasticType = random(1,5); 
     Serial.println(IdentifiedPlasticType);
     LastResultReady = true;
     ScreenResult();
@@ -423,20 +340,6 @@ void led(int argc, char *argv[]) // controlls the LED's
 
 void initWifi() { // Establish a Wi-Fi connection with your router
     Serial.println("initWifi initiated");    
-    wifiMulti.addAP("Markus iPhone", "KomNuMand");
-    wifiMulti.addAP("Biosphere", "pl4stic-sc4nner");
-    wifiMulti.addAP("TSH Guest", "");
-    wifiMulti.addAP("HW45", "defg030ab1");
-
-    Serial.println("Connecting Wifi...");
-    if(wifiMulti.run() == WL_CONNECTED) {
-        Serial.println("");
-        Serial.println("Connected to WiFi:");
-        Serial.println(WiFi.SSID());
-    }
-    else{
-        Serial.println("WiFi Failed. Trying again in 30sec");
-    }
     Serial.println("initWifi done"); 
 }
 
@@ -450,27 +353,13 @@ void setup()
     SPI.begin();
     tft.init();
     Serial.println("Screen Up");
-
-    //SPI.beginTransaction( SPISettings(8000000 / 4, MSBFIRST, SPI_MODE1) );
-    Serial.println("SPI Up");
-    
-    
     Serial.println("Screen Up");
     tft.fillScreen(TFT_BLACK);
     Serial.println("Screen Up2");
 
     CreateSprites();
     ScreenStart();
-
-    Wire.begin();
-    Serial.println("Wire Up");
-    //ledctrl.begin();
-    Serial.println("LED Up");
-    //adc.begin(ADS1256_DRATE_30000SPS,ADS1256_GAIN_1,false); 
-    Serial.println("ADC Up");
-    //adc.setChannel(0,1);    // differential ADC reading 
-    //initWifi();
-
+    
     pinMode(buttonPin, INPUT);
     pinMode(buttonPowerPin, OUTPUT);
     digitalWrite(buttonPowerPin, HIGH);
@@ -520,17 +409,6 @@ void loop()
 
     // Place result screen here
 
-
-    // if WiFi is down, try reconnecting
-    /*
-    if ((WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >= interval)) {
-        Serial.print(millis());
-        Serial.println("Reconnecting to WiFi...");
-        WiFi.disconnect();
-        initWifi();
-        previousMillis = currentMillis;
-    }
-    */
     if (currentMillis - LastUseMillis >= SleepTimer) // If no button press for some time -> sleep
     {
         Serial.println("Going to sleep...");
