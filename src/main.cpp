@@ -13,17 +13,75 @@
 | Reset     | 27      | Reset       | Reset                         | 
 | DRDY      | 26      | DRDY        | Data Ready                    | 
 */
+
+
 #include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
-#include <TFT_eSPI.h> 
-#include <String.h>
-#include "Logo5.h"
 
 
 /* /////////////////////////////////////////////////
-            Screen
+            BLE setup
 *//////////////////////////////////////////////////
+#include <BLEDevice.h>
+#include <BLEUtils.h>
+#include <BLEServer.h>
+#include <BLE2902.h>
+
+BLEServer* pServer = NULL;
+BLECharacteristic* pPRESCAN = NULL;
+BLECharacteristic* pSCAN1 = NULL;
+BLECharacteristic* pSCAN2 = NULL;
+BLECharacteristic* pSCAN3 = NULL;
+BLECharacteristic* pSCAN4 = NULL;
+BLECharacteristic* pSCAN5 = NULL;
+BLECharacteristic* pSCAN6 = NULL;
+BLECharacteristic* pSCAN7 = NULL;
+BLECharacteristic* pSCAN8 = NULL;
+BLECharacteristic* pSCANPOST = NULL;
+
+bool deviceConnected = false;
+bool oldDeviceConnected = false;
+uint32_t value = 0;
+
+#define SERVICE_UUID    "b5540b68-9717-40c2-8a5f-37d990d3959f"
+#define SCAN_PRE_UUID   "345c11d5-8947-48cf-a27f-46ac37f2657a"
+#define SCAN_1_UUID     "9c647f48-8681-42e5-9721-90f6838cb9b8"
+#define SCAN_2_UUID     "6d5fc8f3-5d5b-4fd9-95e6-bf38c1b41fd3"
+#define SCAN_3_UUID     "301d789e-1d7e-4075-8d89-91e5fbe34296"
+#define SCAN_4_UUID     "23d1a3c8-fbac-482c-8bb4-a6e02029cd49"
+#define SCAN_5_UUID     "8f553f30-b86a-44b2-9e65-5b18655e1f45"
+#define SCAN_6_UUID     "cc04d0f9-71f9-4480-aabf-96315939c444"
+#define SCAN_7_UUID     "33d7c053-f879-48e4-bdb1-a17de4a178d1"
+#define SCAN_8_UUID     "2f69391c-c2f5-47cf-b806-7f22b400c0c1"
+#define SCAN_POST_UUID  "b6309642-c6c3-4ac3-b9a6-a7a740ccf11f"
+
+
+
+class MyServerCallbacks: public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer) {
+      deviceConnected = true;
+    };
+
+    void onDisconnect(BLEServer* pServer) {
+      deviceConnected = false;
+    }
+};
+
+
+
+
+
+
+/* /////////////////////////////////////////////////
+            Screen setup
+*//////////////////////////////////////////////////
+
+#include <TFT_eSPI.h> 
+#include <String.h>
+#include "Logo5.h"
+#include "NotoSansBold36.h"
+
 
 // Define library an sprites
 TFT_eSPI tft=TFT_eSPI();
@@ -49,7 +107,7 @@ int screenDisplayed = 0;
 #define gradWait2     0x367F
 
 // Text matrix
-char *loading[] = {"Scanning.", "Scanning..", "Scanning..."};
+//char *loading[] = {"Scanning.", "Scanning..", "Scanning..."};
 
 // Horizontal scrolling
 int spriteWidth = 100;
@@ -62,7 +120,7 @@ int xmin = centerX-(spriteWidth/2)+1;
 
 
 /* /////////////////////////////////////////////////
-            Wifi setup
+           Buttons 
 *//////////////////////////////////////////////////
 const int buttonPowerPin = 32;
 const int buttonPin = 33;
@@ -146,7 +204,6 @@ void ScreenReady() {
 }   
 
 void ScreenScanningLine(){
-    Serial.println("Scanning line initiated");
     scanningLine.pushSprite(centerX-(spriteWidth/2), centerY-spriteHeight);
     scanningLine.scroll(dirX, 0);
 
@@ -154,12 +211,11 @@ void ScreenScanningLine(){
     
     if(currentX == xmin)  dirX = +1;
     if(currentX == xmax)  dirX = -1;
-    Serial.println("scanning line done");
 }
 
 void ScreenScanAgain(){
     Serial.println("Scan again initiated");
-    screenText.fillSprite(TFT_BLACK);
+    screenText.fillSprite(TFT_ORANGE);
     screenText.pushSprite(45, 45);
     tft.setTextDatum(4);
     tft.setTextSize(6);
@@ -181,7 +237,7 @@ void ScreenScanning(){
     screenText.pushSprite(45, 45);
     
     unsigned long cM1 = millis();
-    
+    Serial.println("Scanning line initiated");
     while((cM1-pM1) <= 2000){
        cM1 = millis();
        unsigned long cM2 = millis();
@@ -245,9 +301,66 @@ void read_adc(int argc, char *argv[])  // Takes a single sensor reading
     Serial.println("read ADC done");
 }
 
-void sendData(String data){  // Sends data to google sheets
-    Serial.println("Send data initiated");
-    Serial.println("Send data done");
+void NotifyBLE(String pre, String scan1, String scan2, String scan3, String scan4, String scan5, String scan6, String scan7, String scan8, String post)
+{
+    Serial.println("Trying to Notify via BLE");
+    if (deviceConnected) { // notify changed value
+        Serial.println("Device connected to me");
+        pPRESCAN    ->  setValue((uint8_t*)&pre, pre.length());
+        pPRESCAN    ->  notify();
+        Serial.println("Pre sent!");
+        delay(3);
+
+        pSCAN1    ->  setValue((uint8_t*)&scan1, scan1.length());
+        pSCAN1    ->  notify();
+        Serial.println("Scan 1 sent");
+        delay(3);
+
+        pSCAN2    ->  setValue((uint8_t*)&scan2, scan2.length());
+        pSCAN2    ->  notify();
+        Serial.println("Scan 2 sent");
+        delay(3);
+
+        pSCAN3    ->  setValue((uint8_t*)&scan3, scan3.length());
+        pSCAN3    ->  notify();
+        Serial.println("Scan 3 sent");
+        delay(3);
+
+        pSCAN4    ->  setValue((uint8_t*)&scan4, scan4.length());
+        pSCAN4    ->  notify();
+        Serial.println("Scan 4 sent");
+        delay(3);
+
+        pSCAN5    ->  setValue((uint8_t*)&scan5, scan5.length());
+        pSCAN5    ->  notify();
+        Serial.println("Scan 5 sent");
+        delay(3);
+
+        pSCAN6    ->  setValue((uint8_t*)&scan6, scan6.length());
+        pSCAN6    ->  notify();
+        Serial.println("Scan 6 sent");
+        delay(3);
+
+        pSCAN7    ->  setValue((uint8_t*)&scan7, scan7.length());
+        pSCAN7    ->  notify();
+        Serial.println("Scan 7 sent");
+        delay(3);
+        
+        pSCAN8    ->  setValue((uint8_t*)&scan8, scan8.length());
+        pSCAN8    ->  notify();
+        Serial.println("Scan 8 sent");
+        delay(3);
+
+        pSCANPOST    ->  setValue((uint8_t*)&post, post.length());
+        pSCANPOST    ->  notify();
+        Serial.println("Post sent");
+        delay(3); // bluetooth stack will go into congestion, if too many packets are sent, in 6 hours test i was able to go as low as 3ms
+         Serial.println("Every value notified via BLE");
+    }
+    else{
+         Serial.println("No device connected");
+    }
+   
 }
 
 void scan() // Performs a scanning
@@ -268,8 +381,6 @@ void scan() // Performs a scanning
         //readings[i] = adc.readCurrentChannel()*multiplier; // Read sensor and save in place "i"
         //ledctrl.off(i);                         // turn off LED "i"
     }
-
-
     float postScan = esp_random();
     //postScan = adc.readCurrentChannel()*multiplier;  // making a scan without LED's
     
@@ -278,28 +389,16 @@ void scan() // Performs a scanning
         Serial.print('\t');                     // adds space (tap) between all values
     }
     Serial.println();
-
-    ////////////////////////////////////////
-    //     Transmission to google sheets
-    ////////////////////////////////////////
-
-    // All readings to one string
-    
-    String ResultsString = String(readings[0]) + ";" + 
-            String(readings[1]) + ";" + 
-            String(readings[2]) + ";" +
-            String(readings[3]) + ";" +
-            String(readings[4]) + ";" +
-            String(readings[5]) + ";" +
-            String(readings[6]) + ";" +
-            String(readings[7]) + ";"  +
-            String(preScan)     + ";" +
-            String(postScan)
-            ; 
-
-    // string as Json object
-    String jsonObject = String("{\"value1\":\"") + (ResultsString) +  "\"}";
-    // sendData(jsonObject);
+    NotifyBLE(String(preScan), 
+                String(readings[1]),
+                String(readings[2]),
+                String(readings[3]),
+                String(readings[4]),
+                String(readings[5]),
+                String(readings[6]),
+                String(readings[7]),
+                String(readings[8]) ,
+                String(postScan));
 
     Serial.print("Predicted class: ");
     IdentifiedPlasticType = random(1,5); 
@@ -338,9 +437,87 @@ void led(int argc, char *argv[]) // controlls the LED's
    Serial.println("LED done");
 }
 
-void initWifi() { // Establish a Wi-Fi connection with your router
-    Serial.println("initWifi initiated");    
-    Serial.println("initWifi done"); 
+void initiateBLE() {
+    Serial.println("Initializing BLE");
+
+    BLEDevice::init("PlasticScanner");
+    BLEServer *pServer = BLEDevice::createServer();
+    BLEService *pService = pServer->createService(SERVICE_UUID);
+    BLECharacteristic *pPRESCAN = pService->createCharacteristic(
+                                            SCAN_PRE_UUID,
+                                            BLECharacteristic::PROPERTY_READ
+                                        );
+    BLECharacteristic *pSCAN1 = pService->createCharacteristic(
+                                            SCAN_1_UUID,
+                                            BLECharacteristic::PROPERTY_READ
+                                        );
+    BLECharacteristic *pSCAN2 = pService->createCharacteristic(
+                                            SCAN_2_UUID,
+                                            BLECharacteristic::PROPERTY_READ
+                                        );
+    BLECharacteristic *pSCAN3 = pService->createCharacteristic(
+                                            SCAN_3_UUID,
+                                            BLECharacteristic::PROPERTY_READ
+                                        );
+    BLECharacteristic *pSCAN4 = pService->createCharacteristic(
+                                            SCAN_4_UUID,
+                                            BLECharacteristic::PROPERTY_READ
+                                        );
+    BLECharacteristic *pSCAN5 = pService->createCharacteristic(
+                                            SCAN_5_UUID,
+                                            BLECharacteristic::PROPERTY_READ
+                                        );
+    BLECharacteristic *pSCAN6 = pService->createCharacteristic(
+                                            SCAN_6_UUID,
+                                            BLECharacteristic::PROPERTY_READ
+                                        );
+    BLECharacteristic *pSCAN7 = pService->createCharacteristic(
+                                            SCAN_7_UUID,
+                                            BLECharacteristic::PROPERTY_READ
+                                        );
+    BLECharacteristic *pSCAN8 = pService->createCharacteristic(
+                                            SCAN_8_UUID,
+                                            BLECharacteristic::PROPERTY_READ
+                                        );
+    BLECharacteristic *pSCANPOST = pService->createCharacteristic(
+                                            SCAN_POST_UUID,
+                                            BLECharacteristic::PROPERTY_READ
+                                        );
+    
+
+
+    pPRESCAN    ->  setValue("42");
+    pSCAN1      ->  setValue("42");
+    pSCAN2      ->  setValue("42");
+    pSCAN3      ->  setValue("42");
+    pSCAN4      ->  setValue("42");
+    pSCAN5      ->  setValue("42");
+    pSCAN6      ->  setValue("42");
+    pSCAN7      ->  setValue("42");
+    pSCAN8      ->  setValue("42");
+    pSCANPOST   ->  setValue("42");
+    pService    ->  start();
+    // BLEAdvertising *pAdvertising = pServer->getAdvertising();  // this still is working for backward compatibility
+    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+    pAdvertising->addServiceUUID(SERVICE_UUID);
+    pAdvertising->setScanResponse(true);
+    pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
+    pAdvertising->setMinPreferred(0x12);
+    BLEDevice::startAdvertising();
+    Serial.println("BLE Up!");
+}
+
+void initiateTFT()
+{
+    Serial.println("Initializing screen");
+    tft.init();
+    tft.setRotation(0);
+    tft.fillScreen(TFT_BLACK);
+    screenText.loadFont(NotoSansBold36);
+    tft.fillScreen(TFT_BLACK);
+    CreateSprites();
+    ScreenStart();
+    Serial.println("Screen Up");
 }
 
 void setup()
@@ -348,17 +525,12 @@ void setup()
     Serial.begin(9600);
     print_wakeup_reason();
     esp_sleep_enable_ext0_wakeup(GPIO_NUM_33,0); //1 = High, 0 = Low
-
     Serial.println("Serial Up");
     SPI.begin();
-    tft.init();
-    Serial.println("Screen Up");
-    Serial.println("Screen Up");
-    tft.fillScreen(TFT_BLACK);
-    Serial.println("Screen Up2");
-
-    CreateSprites();
-    ScreenStart();
+    Serial.println("SPI Up");
+    initiateTFT();
+    initiateBLE();
+    
     
     pinMode(buttonPin, INPUT);
     pinMode(buttonPowerPin, OUTPUT);
@@ -366,22 +538,32 @@ void setup()
     LastUseMillis = millis();
     LastScreenMillis = millis();
     Serial.println("Trigger Up");
-    Serial.println("PlasticScanner is initialized!");
 
-    Serial.println("6000ms delay");
+
+    Serial.println("PlasticScanner is initialized!");
+    Serial.println("6000ms delay to show booting screen");
     delay(6000);
     ScreenReady();
 }
-
-
-
 
 void loop()
 {
     buttonState = digitalRead(buttonPin);
     currentMillis = millis();
-    pM1 = millis();
+    pM1 = millis(); 
     pM2 = millis();
+    
+    if (!deviceConnected && oldDeviceConnected) {
+        delay(500); // give the bluetooth stack the chance to get things ready
+        pServer->startAdvertising(); // restart advertising
+        Serial.println("start advertising");
+        oldDeviceConnected = deviceConnected;
+    }
+    // connecting
+    if (deviceConnected && !oldDeviceConnected) {
+        // do stuff here on connecting
+        oldDeviceConnected = deviceConnected;
+    }
 
     if (buttonState == LOW) {
         Serial.println("button pushed!"); 
@@ -390,33 +572,20 @@ void loop()
         LastScreenMillis = currentMillis;
         ReadyScreenMillis = currentMillis;
         AgainScreenMillis = currentMillis;
-
-        
         Serial.println("Button done"); 
     } 
-
-    if (currentMillis - ReadyScreenMillis >= ReadyTimer) // If no button press for some time -> sleep
+    else if (currentMillis - ReadyScreenMillis >= ReadyTimer) // If no button press for some time -> sleep
     {
         ScreenReady();
         ReadyScreenMillis = currentMillis;
     }
-    else if (currentMillis - AgainScreenMillis >= AgainTimer && LastResultReady) // If no button press for some time -> sleep
-    {
-        
-        ScreenScanAgain();
-        AgainScreenMillis = currentMillis;
-    }
-
-    // Place result screen here
-
-    if (currentMillis - LastUseMillis >= SleepTimer) // If no button press for some time -> sleep
+    else if (currentMillis - LastUseMillis >= SleepTimer) // If no button press for some time -> sleep
     {
         Serial.println("Going to sleep...");
         ScreenStart();
         delay(3000);
         // Place "Going to sleep screen" + delay here
         esp_deep_sleep_start();
-        
     }
     
 }
