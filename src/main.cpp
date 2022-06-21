@@ -81,6 +81,12 @@ class MyServerCallbacks: public BLEServerCallbacks {
 #include <String.h>
 #include "Logo5.h"
 #include "NotoSansBold36.h"
+#include "Roboto24pt.h"
+#include "Roboto_Condensed_36.h"
+#include "Roboto_Condensed_20.h"
+#include "Roboto_Condensed_16.h"
+#include "Roboto_Condensed_12.h"
+
 
 
 // Define library an sprites
@@ -153,9 +159,32 @@ unsigned long BootingInterval = 3000;
 
 
 
+
 /* /////////////////////////////////////////////////
             Screens
 *//////////////////////////////////////////////////
+
+void ScreenFillBlack() 
+{
+    tft.fillCircle(centerX, centerY, 130, TFT_BLACK);
+    screenText.fillScreen(TFT_BLACK);
+}
+
+void ScreenFillGreen() 
+{
+    tft.fillCircle(centerX, centerY, 130, TFT_DARKGREEN);
+    screenText.fillScreen(TFT_DARKGREEN);
+}
+
+void ScreenFillRed() 
+{
+    tft.fillCircle(centerX, centerY, 130, TFT_RED);
+    screenText.fillScreen(TFT_RED);
+}
+
+
+
+
 void CreateSprites() {
     // Create sprites
     Serial.println("Create sprite initiated");
@@ -169,6 +198,7 @@ void CreateSprites() {
 void ScreenStart() {
     // Show start screen
     Serial.println("Start Screen initiated");
+    ScreenFillBlack();
     screenText.fillSprite(TFT_BLACK);
     screenText.pushSprite(45, 45);
     logo.setSwapBytes(true);
@@ -180,11 +210,7 @@ void ScreenStart() {
 
 void ScreenReady() {
     Serial.println("Ready screen initiated");
-    screenText.fillSprite(TFT_BLACK);
-    screenText.pushSprite(45, 45);
-    tft.fillRectVGradient(0, 0, 240, 240, gradWait1, gradWait2);
-    tft.fillCircle(centerX, centerY, 106, TFT_BLACK);
-
+    ScreenFillBlack();
     //create line
     scanningLine.setColorDepth(8);
     scanningLine.drawFastVLine(0,0,50, TFT_GREEN);
@@ -192,13 +218,14 @@ void ScreenReady() {
     scanningLine.drawFastVLine(2,0,50, TFT_GREEN);
 
     screenText.setTextSize(2);
-    screenText.setTextColor(TFT_WHITE, TFT_BLACK);
+    screenText.setFreeFont(&Roboto_Condensed_20);
+    screenText.setTextColor(TFT_WHITE);
     screenText.setTextDatum(4);
-    screenText.drawString("button to", 75, 75);
+    screenText.drawString("to", 75, 75);
     screenText.setTextDatum(7);
-    screenText.drawString("Press", 75, 75-30);
+    screenText.drawString("Press", 75, 75-20);
     screenText.setTextDatum(1);
-    screenText.drawString("scan", 75, 75+30);
+    screenText.drawString("scan", 75, 75+20);
     screenText.pushSprite(45, 45);
     Serial.println("Ready screen done");
 }   
@@ -228,12 +255,11 @@ void ScreenScanAgain(){
 }
 
 void ScreenScanning(){
+    ScreenFillBlack();
     Serial.println("Scanning screen initiated");
-    screenText.fillSprite(TFT_BLACK);
-    screenText.pushSprite(45, 45);
-    tft.fillScreen(TFT_BLACK);
-    screenText.setTextSize(3);
-    screenText.drawString("Scanning", 75, 75+10);
+    screenText.setTextDatum(4);
+    screenText.setFreeFont(&Roboto_Condensed_12);
+    screenText.drawString("Scanning", 75, 75+20);
     screenText.pushSprite(45, 45);
     
     unsigned long cM1 = millis();
@@ -250,23 +276,30 @@ void ScreenScanning(){
 }
 
 void ScreenResult(){
-    Serial.println("Result screen initiated");
-    screenText.fillSprite(TFT_BLACK);
+
+    // Make screen black
+    // make background X color
+    // put text
+    // Push sprite
+    ScreenFillGreen();
+    screenText.setFreeFont(&Roboto_Condensed_36);
+    screenText.setTextColor(TFT_WHITE);
+    screenText.setTextDatum(4);
+    screenText.drawString("PP", 75, 75);
     screenText.pushSprite(45, 45);
 
+
+
+    // Serial.println("Result screen initiated");
     unsigned long cM1 = millis();
 
-    tft.fillCircle(centerX, centerY, 120, C_RESULT );
-    tft.fillCircle(centerX, centerY, 105, TFT_BLACK);
+    // tft.fillCircle(centerX, centerY, 120, C_RESULT );
+    // //tft.fillCircle(centerX, centerY, 105, TFT_BLACK);
     
-    tft.setTextDatum(4);
-    tft.setTextSize(6);
-    tft.drawString(String("PVC"), centerX, 100);
-    tft.setTextSize(2);
-    tft.drawString("97%", centerX, 135);
+    // screenText.setTextSize(2);
     
     while(cM1-pM1 <2500){
-    cM1 = millis();
+        cM1 = millis();
     }
     Serial.println("Result screen done");
 }
@@ -544,6 +577,7 @@ void setup()
     Serial.println("6000ms delay to show booting screen");
     delay(6000);
     ScreenReady();
+
 }
 
 void loop()
