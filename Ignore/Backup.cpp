@@ -19,11 +19,6 @@
 #include <SPI.h>
 #include <Wire.h>
 
-/* /////////////////////////////////////////////////
-            Fonts setup
-*//////////////////////////////////////////////////
-
-
 
 /* /////////////////////////////////////////////////
             BLE setup
@@ -80,18 +75,23 @@ class MyServerCallbacks: public BLEServerCallbacks {
 *//////////////////////////////////////////////////
 #include <NeoPixelBus.h>
 
-const uint16_t PixelCount = 2; // this example assumes 4 pixels, making it smaller will cause a failure
-const uint8_t PixelPin = 25;  // make sure to set this to the correct pin, ignored for Esp8266
+// Which pin on the Arduino is connected to the NeoPixels?
+// On a Trinket or Gemma we suggest changing this to 1:
+#define LED_PIN    25
 
-#define colorSaturation 128
+// How many NeoPixels are attached to the Arduino?
+#define LED_COUNT 2
 
-NeoPixelBus<NeoRgbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
-
-RgbColor red( 0, colorSaturation, 0);
-RgbColor green(colorSaturation, 0, 0);
-RgbColor blue(0, 0, colorSaturation);
-RgbColor white(colorSaturation, colorSaturation, colorSaturation);
-RgbColor black(0);
+// Declare our NeoPixel strip object:
+Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_RGBW);
+// Argument 1 = Number of pixels in NeoPixel strip
+// Argument 2 = Arduino pin number (most are valid)
+// Argument 3 = Pixel type flags, add together as needed:
+//   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+//   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+//   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
+//   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
+//   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
 
 
 
@@ -103,13 +103,12 @@ RgbColor black(0);
 #include <TFT_eSPI.h> 
 #include <String.h>
 #include "Logo5.h"
-#include "Fonts.h"
-
-
-#define fontScanning    &Roboto_Condensed_24
-#define fontResult      &Roboto_Condensed_Light_99
-#define fontStart       &Roboto_Condensed_48
-
+#include "NotoSansBold36.h"
+#include "Roboto24pt.h"
+#include "Roboto_Condensed_36.h"
+#include "Roboto_Condensed_20.h"
+#include "Roboto_Condensed_16.h"
+#include "Roboto_Condensed_12.h"
 
 
 // Define library an sprites
@@ -180,48 +179,6 @@ unsigned long interval = 30000;
 unsigned long BootingInterval = 3000;
 
 
-/* /////////////////////////////////////////////////
-            LED
-*//////////////////////////////////////////////////
-
-void initiateLED() 
-{
-    while (!Serial); // wait for serial attach
-
-    Serial.println();
-    Serial.println("Initializing...");
-    Serial.flush();
-
-    // this resets all the neopixels to an off state
-    strip.Begin();
-    strip.Show();
-
-
-    Serial.println();
-    Serial.println("Running...");
-
-}
-
-void whiteLED() {
-    Serial.println("Colors R, G, B, W...");
-    strip.SetPixelColor(0, white);
-    strip.SetPixelColor(1, white);
-    strip.Show();
-}
-
-void greenLED() {
-    Serial.println("Colors R, G, B, W...");
-    strip.SetPixelColor(0, green);
-    strip.SetPixelColor(1, green);
-    strip.Show();
-}
-
-void redLED() {
-    Serial.println("Colors R, G, B, W...");
-    strip.SetPixelColor(0, red);
-    strip.SetPixelColor(1, red);
-    strip.Show();
-}
 
 
 
@@ -246,6 +203,8 @@ void ScreenFillRed()
     tft.fillCircle(centerX, centerY, 130, TFT_RED);
     screenText.fillScreen(TFT_RED);
 }
+
+
 
 
 void CreateSprites() {
@@ -273,10 +232,15 @@ void ScreenStart() {
 
 void ScreenReady() {
     Serial.println("Ready screen initiated");
-    whiteLED();
     ScreenFillBlack();
-    screenText.setFreeFont(fontStart);
-    //screenText.setFreeFont(&Roboto_Condensed_20);
+    //create line
+    scanningLine.setColorDepth(8);
+    scanningLine.drawFastVLine(0,0,50, TFT_GREEN);
+    scanningLine.drawFastVLine(1,0,50, TFT_GREEN);
+    scanningLine.drawFastVLine(2,0,50, TFT_GREEN);
+
+    screenText.setTextSize(2);
+    screenText.setFreeFont(&Roboto_Condensed_20);
     screenText.setTextColor(TFT_WHITE);
     screenText.setTextDatum(4);
     screenText.drawString("to", 75, 75);
@@ -306,6 +270,7 @@ void ScreenScanAgain(){
     tft.setTextSize(6);
     tft.drawString(String("PVC"), centerX, 100);
     tft.setTextDatum(4);
+    tft.setTextSize(2);
     tft.drawString("Press button", centerX, 135);
     tft.drawString("to scan again", centerX, 155);
     Serial.println("Scan again done");
@@ -313,17 +278,15 @@ void ScreenScanAgain(){
 
 void ScreenScanning(){
     ScreenFillBlack();
-    redLED();
-    screenText.setFreeFont(fontScanning);
     Serial.println("Scanning screen initiated");
     screenText.setTextDatum(4);
-    //screenText.setFreeFont(&Roboto_Condensed_12);
+    screenText.setFreeFont(&Roboto_Condensed_12);
     screenText.drawString("Scanning", 75, 75+20);
     screenText.pushSprite(45, 45);
     
     unsigned long cM1 = millis();
     Serial.println("Scanning line initiated");
-    while((cM1-pM1) <= 4000){
+    while((cM1-pM1) <= 2000){
        cM1 = millis();
        unsigned long cM2 = millis();
        if(cM2-pM2 >= 10){
@@ -340,10 +303,8 @@ void ScreenResult(){
     // make background X color
     // put text
     // Push sprite
-    greenLED();
     ScreenFillGreen();
-    screenText.setFreeFont(fontResult);
-    //screenText.setFreeFont(&Roboto_Condensed_36);
+    screenText.setFreeFont(&Roboto_Condensed_36);
     screenText.setTextColor(TFT_WHITE);
     screenText.setTextDatum(4);
     screenText.drawString("PP", 75, 75);
@@ -368,7 +329,6 @@ void ScreenResult(){
 /* /////////////////////////////////////////////////
             End of Screens
 *//////////////////////////////////////////////////
-
 
 void print_wakeup_reason(){
   esp_sleep_wakeup_cause_t wakeup_reason;
@@ -500,7 +460,6 @@ void scan() // Performs a scanning
     Serial.println(IdentifiedPlasticType);
     LastResultReady = true;
     ScreenResult();
-    greenLED();
     Serial.println("Scan done");
     
 }
@@ -609,26 +568,16 @@ void initiateTFT()
     tft.init();
     tft.setRotation(0);
     tft.fillScreen(TFT_BLACK);
-    //screenText.loadFont(NotoSansBold36);
+    screenText.loadFont(NotoSansBold36);
     tft.fillScreen(TFT_BLACK);
     CreateSprites();
-    tft.setTextSize(1);
-    screenText.setTextSize(1);
-    scanningLine.setColorDepth(8);
-    scanningLine.drawFastVLine(0,0,50, TFT_GREEN);
-    scanningLine.drawFastVLine(1,0,50, TFT_GREEN);
-    scanningLine.drawFastVLine(2,0,50, TFT_GREEN);
     ScreenStart();
     Serial.println("Screen Up");
 }
 
-
-
-
 void setup()
 {
     Serial.begin(9600);
-    while (!Serial); // wait for serial attach
     print_wakeup_reason();
     esp_sleep_enable_ext0_wakeup(GPIO_NUM_33,0); //1 = High, 0 = Low
     Serial.println("Serial Up");
@@ -636,7 +585,7 @@ void setup()
     Serial.println("SPI Up");
     initiateTFT();
     initiateBLE();
-
+    
     
     pinMode(buttonPin, INPUT);
     pinMode(buttonPowerPin, OUTPUT);
@@ -648,11 +597,8 @@ void setup()
 
     Serial.println("PlasticScanner is initialized!");
     Serial.println("6000ms delay to show booting screen");
-    delay(5000);
+    delay(6000);
     ScreenReady();
-    initiateLED();
-    whiteLED();
-    
 
 }
 
@@ -686,7 +632,6 @@ void loop()
     } 
     else if (currentMillis - ReadyScreenMillis >= ReadyTimer) // If no button press for some time -> sleep
     {
-        whiteLED();
         ScreenReady();
         ReadyScreenMillis = currentMillis;
     }
